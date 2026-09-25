@@ -1,0 +1,5 @@
+# FPS probe: title scroll advances 2px per RENDERED frame.
+run 90
+hold down
+run 120
+shot fps

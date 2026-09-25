@@ -1,0 +1,10 @@
+# Walls toggle modal (C button) then resume with START.
+run 90
+press start 30
+run 10
+press c 30
+run 5
+shot wallsoff
+press start 30
+run 10
+shot resumed

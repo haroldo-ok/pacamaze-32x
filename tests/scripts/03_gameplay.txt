@@ -1,0 +1,23 @@
+# Walk, turn, map modal, fire (release edge).
+run 90
+press start 30
+run 10
+hold up
+run 60
+release up
+shot walk
+hold left
+run 30
+release left
+shot turn
+press b 30
+run 5
+shot map
+press b 30
+run 5
+shot back
+press a 30
+run 2
+release a
+run 2
+shot fire

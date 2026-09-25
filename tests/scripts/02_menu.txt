@@ -1,0 +1,6 @@
+# START begins a new game (title -> 3D view transition).
+run 90
+shot title
+press start 30
+run 30
+shot game

@@ -1,0 +1,13 @@
+# Button mapping with long holds: B=map, A closes map, C=walls modal.
+run 90
+press start 40
+run 10
+shot g0
+press b 150
+shot map
+press a 60
+shot closed
+press c 150
+shot walls
+press start 60
+shot resumed

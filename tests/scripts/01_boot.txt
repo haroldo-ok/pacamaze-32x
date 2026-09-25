@@ -1,0 +1,5 @@
+# Boot to the scrolling title screen, then scroll (frames must differ).
+run 90
+shot title0
+press down 30
+shot title1
