@@ -50,6 +50,20 @@ enum {
 #define SFX_DEATH_CUR 0x1F4
 #define SFX_DEATH_STEP 0x19
 
+/* Sample IDs for the 32X slave player. Must match the SFX_* enum in
+ * src/gen/sfx.h (SID_EAT == SFX_EAT, ...); duplicated here so the core
+ * stays platform-header-free. */
+enum {
+    SID_NONE = 0,
+    SID_EAT,    /* dot eaten */
+    SID_AMMO,   /* ammo pickup (DOS played the kill chirp here) */
+    SID_SHOOT,  /* player fired */
+    SID_KILL,   /* ghost shot / bullet splat on wall */
+    SID_DEATH,  /* player death */
+    SID_UI,     /* map / walls / pause / msgbox blip (new, no DOS chirp) */
+    SID_WIN     /* level clear fanfare (new, no DOS chirp) */
+};
+
 /* Title / win scroll limits (pixels; DOS compares byte offsets). */
 #define TITLE_SCROLL_MAX 281
 #define WIN_SCROLL_MAX 93
@@ -80,6 +94,7 @@ typedef struct {
     int tick_carry;         /* ghost-move fractional carry (count>>2) */
     int32_t tick_acc;       /* 70 Hz accumulator (units of ticks/6) */
     int sfx_cur, sfx_step;  /* chirp state */
+    uint16_t sfx_id, sfx_seq; /* sample trigger: id + sequence */
     uint16_t prev_pad;
     int fire_pressed;       /* latched Space-press (B3); release fires */
     char msg[64];           /* ST_MSG text */

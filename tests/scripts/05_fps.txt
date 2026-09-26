@@ -1,5 +1,10 @@
-# FPS probe: title scroll advances 2px per RENDERED frame.
+# FPS probe: title scroll advances 2px per RENDERED frame. Two shots must
+# differ (scroll in progress). The hold stays clear of scroll-max (~117+),
+# past which the tail frame drops to 7 colors; re-centered from 120 on
+# 2026-09-26 after a 1-frame phase shift (SFX .text growth) put hold=120
+# exactly past scroll-max.
 run 90
+shot title
 hold down
-run 120
+run 100
 shot fps

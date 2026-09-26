@@ -27,10 +27,12 @@ static int DosRand(Game *g, int n)
     return (int)((r * (uint32_t)n) >> 15);
 }
 
-static void Sfx_Start(Game *g, int cur, int step)
+static void Sfx_Start(Game *g, int cur, int step, int id)
 {
     g->sfx_cur = cur;
     g->sfx_step = step;
+    g->sfx_id = (uint16_t)id;
+    g->sfx_seq++;
 }
 
 static void Sfx_Tick(Game *g)
@@ -149,6 +151,7 @@ static void NewGame(Game *g)
     g->tick_carry = 0;
     g->tick_acc = 0;
     g->sfx_cur = g->sfx_step = 0;
+    g->sfx_id = g->sfx_seq = 0;
     g->fire_pressed = 0;
     g->spin_acc = 0;
     g->scroll = 0;
@@ -292,7 +295,7 @@ static void CheckObjects(Game *g)
         }
         if (g->bytemap[MapIdx(o->x, o->y)] != 0) {
             o->alive = 0;
-            Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP);
+            Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP, SID_KILL);
         }
     }
     /* the newest live bullet has a kill aura around every ghost */
@@ -309,7 +312,7 @@ static void CheckObjects(Game *g)
             if (dx < 20 && dy < 20) {
                 GhostShot(g, o);
                 g->score += 10;
-                Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP);
+                Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP, SID_KILL);
             }
         }
     }
@@ -326,7 +329,7 @@ static void CheckObjects(Game *g)
         if (dx < 10 && dy < 10) {
             o->alive = 0;
             g->ammo += 5;
-            Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP);
+            Sfx_Start(g, SFX_KILL_CUR, SFX_KILL_STEP, SID_AMMO);
         }
     }
 }
@@ -339,7 +342,7 @@ static void EatDot(Game *g)
         g->wordmap[m] = 0x2000;
         g->score++;
         g->dots--;
-        Sfx_Start(g, SFX_EAT_CUR, SFX_EAT_STEP);
+        Sfx_Start(g, SFX_EAT_CUR, SFX_EAT_STEP, SID_EAT);
     }
 }
 
@@ -367,7 +370,7 @@ static void StartDeath(Game *g)
 {
     g->state = ST_DEATH;
     g->spin_acc = 0;
-    Sfx_Start(g, SFX_DEATH_CUR, SFX_DEATH_STEP);
+    Sfx_Start(g, SFX_DEATH_CUR, SFX_DEATH_STEP, SID_DEATH);
 }
 
 static void SetMsg(Game *g, const char *s)
@@ -420,7 +423,7 @@ static void PlayFrame(Game *g, uint16_t pad, uint16_t pressed, int ticks)
                 b->y = g->py;
                 b->dir = g->pdir;
                 g->ammo--;
-                Sfx_Start(g, SFX_SHOOT_CUR, SFX_SHOOT_STEP);
+                Sfx_Start(g, SFX_SHOOT_CUR, SFX_SHOOT_STEP, SID_SHOOT);
             }
         }
     }
@@ -437,6 +440,7 @@ static void PlayFrame(Game *g, uint16_t pad, uint16_t pressed, int ticks)
         return;
     }
     if (g->dots == 0) {
+        Sfx_Start(g, 0, 0, SID_WIN);
         g->level++;             /* DOS increments before the message */
         SurvivedMsg(g);
         g->msg_next = MN_NEXTLEVEL;
@@ -444,10 +448,12 @@ static void PlayFrame(Game *g, uint16_t pad, uint16_t pressed, int ticks)
         return;
     }
     if (pressed & IN_MAP) {
+        Sfx_Start(g, 0, 0, SID_UI);
         g->state = ST_MAP;
         return;
     }
     if (pressed & IN_WALLS) {
+        Sfx_Start(g, 0, 0, SID_UI);
         SetMsg(g, g->walls_on ? STR_WALLS_OFF : STR_WALLS_ON);
         g->walls_on = !g->walls_on;
         g->msg_next = MN_GAME;
@@ -455,6 +461,7 @@ static void PlayFrame(Game *g, uint16_t pad, uint16_t pressed, int ticks)
         return;
     }
     if (pressed & IN_START) {
+        Sfx_Start(g, 0, 0, SID_UI);
         SetMsg(g, STR_PAUSED);
         g->msg_next = MN_GAME;
         g->state = ST_MSG;
@@ -527,14 +534,17 @@ void Game_Frame(Game *g, uint16_t pad, int vticks)
             if (g->scroll < TITLE_SCROLL_MAX)
                 g->scroll += 2;
         }
-        if (pressed & IN_START)
+        if (pressed & IN_START) {
             NewGame(g);
+            Sfx_Start(g, 0, 0, SID_UI);
+        }
         break;
     case ST_GAME:
         if ((pad & (IN_START | IN_WALLS)) == (IN_START | IN_WALLS)) {
             /* START+C chord = ESC: quit to title */
             KillType(g, 'b');
             KillType(g, 'a');
+            Sfx_Start(g, 0, 0, SID_UI);
             g->state = ST_TITLE;
             g->scroll = 0;
             break;
@@ -542,12 +552,16 @@ void Game_Frame(Game *g, uint16_t pad, int vticks)
         PlayFrame(g, pad, pressed, ticks);
         break;
     case ST_MAP:
-        if (pressed & (IN_MAP | IN_START | IN_FIRE))
+        if (pressed & (IN_MAP | IN_START | IN_FIRE)) {
+            Sfx_Start(g, 0, 0, SID_UI);
             g->state = ST_GAME;
+        }
         break;
     case ST_MSG:
-        if (pressed & IN_START)
+        if (pressed & IN_START) {
+            Sfx_Start(g, 0, 0, SID_UI);
             MsgContinue(g);
+        }
         break;
     case ST_DEATH:
         Sfx_Tick(g);
@@ -577,6 +591,7 @@ void Game_Frame(Game *g, uint16_t pad, int vticks)
                 g->scroll += 2;
         }
         if (pressed & IN_START) {
+            Sfx_Start(g, 0, 0, SID_UI);
             g->state = ST_TITLE;
             g->scroll = 0;
         }

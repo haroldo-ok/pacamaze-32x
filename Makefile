@@ -35,7 +35,7 @@ SHLIBGCC := $(shell $(SHCC) -m2 -mb -print-libgcc-file-name)
 
 # Game sources (EDIT as milestones land)
 CORE_C  := $(wildcard src/core/*.c)
-GEN_C   := src/gen/assets.c
+GEN_C   := src/gen/assets.c src/gen/sfx.c
 PLAT_C  := $(P32X)/main_32x.c $(P32X)/hw_32x.c $(P32X)/slave_32x.c
 COBJ    := $(patsubst %.c,$(BUILD)/%.o,$(CORE_C) $(GEN_C) $(PLAT_C))
 

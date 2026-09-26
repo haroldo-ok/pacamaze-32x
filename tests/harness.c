@@ -162,8 +162,64 @@ static void cb_video(const void *data, unsigned w, unsigned h, size_t pitch)
 {
     if (data && data != (const void *)-1) store_frame(data, w, h, pitch);
 }
-static void cb_audio(int16_t l, int16_t r) { (void)l; (void)r; }
-static size_t cb_audio_batch(const int16_t *d, size_t f) { (void)d; return f; }
+/* Optional audio capture: set HARNESS_WAV=/path/out.wav to dump the
+ * libretro audio stream (stereo s16). Sizes in the header are left as
+ * placeholders (0xFFFFFFFF); use tools/finalize_wav.py to fix them up. */
+static FILE *wav_file;
+static int wav_opened;
+static void wav_lazy_open(void)
+{
+    const char *path;
+    struct retro_system_av_info av;
+    uint32_t rate, br;
+    uint8_t hdr[44];
+    if (wav_opened)
+        return;
+    wav_opened = 1;
+    path = getenv("HARNESS_WAV");
+    if (!path)
+        return;
+    wav_file = fopen(path, "wb");
+    if (!wav_file) {
+        perror(path);
+        return;
+    }
+    retro_get_system_av_info(&av);
+    rate = (uint32_t)av.timing.sample_rate;
+    br = rate * 4;
+    memset(hdr, 0, sizeof hdr);
+    memcpy(hdr, "RIFF", 4);
+    memcpy(hdr + 8, "WAVEfmt ", 8);
+    hdr[16] = 16;
+    hdr[20] = 1; hdr[22] = 2;
+    hdr[24] = (uint8_t)(rate & 255); hdr[25] = (uint8_t)((rate >> 8) & 255);
+    hdr[26] = (uint8_t)((rate >> 16) & 255);
+    hdr[27] = (uint8_t)((rate >> 24) & 255);
+    hdr[28] = (uint8_t)(br & 255); hdr[29] = (uint8_t)((br >> 8) & 255);
+    hdr[30] = (uint8_t)((br >> 16) & 255);
+    hdr[31] = (uint8_t)((br >> 24) & 255);
+    hdr[32] = 4; hdr[34] = 16;
+    memcpy(hdr + 36, "data", 4);
+    hdr[4] = hdr[5] = hdr[6] = hdr[7] = 255;
+    hdr[40] = hdr[41] = hdr[42] = hdr[43] = 255;
+    fwrite(hdr, 1, sizeof hdr, wav_file);
+    fprintf(stderr, "harness: capturing audio to %s (%u Hz)\n", path, rate);
+}
+static void cb_audio(int16_t l, int16_t r)
+{
+    wav_lazy_open();
+    if (wav_file) {
+        fwrite(&l, 2, 1, wav_file);
+        fwrite(&r, 2, 1, wav_file);
+    }
+}
+static size_t cb_audio_batch(const int16_t *d, size_t f)
+{
+    wav_lazy_open();
+    if (wav_file && f)
+        fwrite(d, 4, f, wav_file);
+    return f;
+}
 static void cb_poll(void) {}
 static int16_t cb_input(unsigned port, unsigned dev, unsigned idx, unsigned id)
 {

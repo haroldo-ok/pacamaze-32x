@@ -15,7 +15,7 @@
 /* COMM mailbox map (do not collide; see docs/GAME_SPEC.md + skill arch notes):
  *   COMM0  master->all : boot/video magic (write-once at startup)
  *   COMM2  master->test: frame heartbeat (increments every game frame)
- *   COMM4  master->slave: audio/sfx word (bit15 = valid; BIOS S_OK at boot)
+ *   COMM4  master->slave: sfx trigger (bit15 = toggle edge, low 3 = id)
  *   COMM6  slave->test : slave heartbeat (increments every slave loop)
  *   COMM8  68k->master : pad state (3-button subset, active high)
  *   COMM10 68k->master : vblank counter

@@ -107,7 +107,10 @@ Data-segment file base = 0x60A0. RE sources: `re/*.asm` in this repo.
 Sound struct {cur, step}. Tick (2x/frame): if cur>0: square-wave at cur Hz; cur -= step; at <=0 off.
 - eat: (0x46, 0x3C) = 70 Hz blip. shoot: (0xC8, 0x28) = 200 Hz. kill: (0x12C, 0x46) = 300 Hz.
   death: (0x1F4, 0x19) = 500 Hz long descend (~20 ticks).
-- 32X port: slave-SH-2 PWM square-wave chirps with identical (startHz, stepPerTick, 2 ticks/frame).
+- 32X port: the same (cur, step) chirp state is kept, but audio is Brutal Doom samples: every
+  Sfx_Start also latches a sample id + sequence (sfx_id, sfx_seq) and the slave SH-2 plays
+  that sample one-shot, preemptive (see section 11). Ammo pickup (DOS: kill chirp) plays its
+  own pickup sample; UI blips + the level-clear fanfare are new (no DOS chirp).
 
 ## 10. Presentation (320x200 indices + 256-color palette)
 
@@ -132,7 +135,9 @@ Sound struct {cur, step}. Tick (2x/frame): if cur>0: square-wave at cur Hz; cur 
 - Render: exact DOS raycaster (256 rays, 97 floor rows, billboards) into an 8-bit 320x200
   window centered in the 320x224 8bpp framebuffer; original COLOR.3D palette via CRAM.
   Faithful + SH-2-tuned (pointer stores, texel-run cache, division tables): ~12-16 fps.
-- Audio: slave SH-2 PWM square-wave SFX (COMM4 freq word) + COMM6 heartbeat.
+- Audio: slave SH-2 PWM sample player (COMM4 = bit15 trigger-toggle + 3-bit sample id;
+  11025 Hz u8 ROM samples x2-upsampled to the 22050 Hz PWM clock, Chilly Willy real-HW init)
+  + COMM6 heartbeat.
 - States: TITLE → GAME ⇄ (MAP modal, MSG modal) → DEATH → TITLE; GAME → WIN → TITLE.
 - Files: original/* (game data), tools/mkassets.py (build-time conversion), src/core (game+render),
   src/platform/32x (boot/video/pad/audio), tests/ (host asserts + PicoDrive scripts).

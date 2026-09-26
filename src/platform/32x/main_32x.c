@@ -37,6 +37,7 @@ int main(void)
     uint32_t timeout;
     uint16_t frame = 0;
     uint16_t last_vb;
+    uint16_t sfx_last = 0, sfx_toggle = 0;
 
     (void)g_data_guard;
 
@@ -71,11 +72,12 @@ int main(void)
         fb = HW_BackBuffer() + GAME_Y0 * SCR_W;
         Render(&G, (uint8_t *)fb);
 
-        /* audio word for the slave: bit15 = valid, freq Hz */
-        if (G.sfx_cur > 0)
-            MARS_SYS_COMM4 = (uint16_t)(0x8000 | (G.sfx_cur & 0x7FFF));
-        else
-            MARS_SYS_COMM4 = 0;
+        /* sfx trigger for the slave: bit15 = toggle edge, low 3 = id */
+        if (G.sfx_seq != sfx_last) {
+            sfx_last = G.sfx_seq;
+            sfx_toggle ^= 1;
+        }
+        MARS_SYS_COMM4 = (uint16_t)((sfx_toggle << 15) | (G.sfx_id & 7));
 
         /* telemetry: state, level, deaths */
         MARS_SYS_COMM14 =
